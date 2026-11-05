@@ -61,7 +61,7 @@ pipx install yt-dlp
 2. Dê permissão de execução ao script:
 
    ```bash
-   chmod +x live-inicio
+   chmod +x live-inicio.sh
    ```
 
 3. Execute passando a URL da live e o tempo inicial em segundos (opcional):
@@ -69,13 +69,13 @@ pipx install yt-dlp
    * **Assistir live do ponto atual (ou vídeo comum do início):**
 
      ```bash
-     ./live-inicio https://www.youtube.com/watch?v=EXEMPLO
+     ./live-inicio.sh https://www.youtube.com/watch?v=EXEMPLO
      ```
 
    * **Iniciar a live a partir de um ponto exato (ex: 2 horas / 7200 segundos):**
 
      ```bash
-     ./live-inicio https://www.youtube.com/watch?v=EXEMPLO 7200
+     ./live-inicio.sh https://www.youtube.com/watch?v=EXEMPLO 7200
      ```
 
 ---
@@ -148,7 +148,7 @@ pipx install yt-dlp
 2. Make the script executable:
 
    ```bash
-   chmod +x live-inicio
+   chmod +x live-inicio.sh
    ```
 
 3. Run the script with a live stream URL and target offset in seconds:
@@ -156,13 +156,13 @@ pipx install yt-dlp
    * **Watch live stream from the current live point (or regular video from start):**
 
      ```bash
-     ./live-inicio https://www.youtube.com/watch?v=EXAMPLE
+     ./live-inicio.sh https://www.youtube.com/watch?v=EXAMPLE
      ```
 
    * **Start live stream from a specific offset (e.g., 2 hours / 7200 seconds):**
 
      ```bash
-     ./live-inicio https://www.youtube.com/watch?v=EXAMPLE 7200
+     ./live-inicio.sh https://www.youtube.com/watch?v=EXAMPLE 7200
      ```
 
 ---
