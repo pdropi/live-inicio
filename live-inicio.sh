@@ -77,7 +77,7 @@ EOF
   HSEQ=$(echo "$HDR" | awk -F': ' 'tolower($1)=="x-head-seqnum"{print $2}')
   HMS=$(echo "$HDR"  | awk -F': ' 'tolower($1)=="x-head-time-millis"{print $2}')
   if [ -n "$HSEQ" ] && [ "${HSEQ:-0}" -gt 0 ] && [ -n "$HMS" ]; then
-    DUR=$(awk -v m="$HMS" -v s="$HSEQ" 'BEGIN{if(s>0) printf "%.3f", m/s/1000; else print 5}')
+    DUR=$(awk -v m="$HMS" -v s="$HSEQ" 'BEGIN{printf "%.3f", m/s/1000}')
   else
     DUR=5
     echo "[aviso] não consegui medir a duração do fragmento; usando 5s."
@@ -112,6 +112,22 @@ EOF
 
   # download em lotes; vídeo é anexado antes do áudio
   (
+    # pede novas URLs ao yt-dlp (usadas quando as atuais expiram)
+    renovar() {
+      local novas nv na
+      mapfile -t novas < <(yt-dlp "${RC[@]}" --live-from-start --no-warnings -f "135,140" -g "$URL" 2>/dev/null)
+      nv="${novas[0]}"
+      na="${novas[1]}"
+      case "$nv" in *itag=135*) ;; *) return 1 ;; esac
+      case "$na" in *itag=140*) ;; *) return 1 ;; esac
+      UV="$nv"
+      UA="$na"
+      return 0
+    }
+
+    # código HTTP de um fragmento (000 se nem conectou)
+    codigo() { curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$1&sq=$2"; }
+
     n=$SEQ0
     [ "$n" -lt 1 ] && n=1
     while true; do
@@ -128,7 +144,28 @@ EOF
       for k in $(seq 0 $((ok - 1))); do cat ".p_v$k" >> live_v.mp4; done
       for k in $(seq 0 $((ok - 1))); do cat ".p_a$k" >> live_a.m4a; done
       n=$((n + ok))
-      [ "$ok" -lt "$LOTE" ] && sleep 2
+
+      if [ "$ok" -lt "$LOTE" ]; then
+        sleep 2
+        # lote incompleto: pode ser só o ao vivo ainda sem o fragmento, ou URL expirada.
+        # testa o fragmento que faltou (n já aponta para ele)
+        expirou=0
+        if [ ! -s ".p_v$ok" ]; then
+          case "$(codigo "$UV" "$n")" in 401|403|410) expirou=1 ;; esac
+        fi
+        if [ "$expirou" -eq 0 ] && [ ! -s ".p_a$ok" ]; then
+          case "$(codigo "$UA" "$n")" in 401|403|410) expirou=1 ;; esac
+        fi
+        if [ "$expirou" -eq 1 ]; then
+          echo "[aviso] URL expirada; renovando..." >&2
+          if renovar; then
+            echo "[aviso] URL renovada." >&2
+          else
+            echo "[aviso] falha ao renovar a URL; tentando de novo em 10s." >&2
+            sleep 10
+          fi
+        fi
+      fi
     done
   ) &
   PID_F=$!
